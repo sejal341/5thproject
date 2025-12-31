@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Admin Login - Assignment Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+      .admin-badge {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .admin-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        border-radius: 10px 10px 0 0;
+        margin-bottom: 2rem;
+      }
+      
+      .security-notice {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 5px;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+      }
+      
+      .danger-zone {
+        border: 2px solid #e74c3c;
+        background: #fdf2f2;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Admin Navigation Bar -->
+    <nav class="navbar" style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);">
+      <div class="nav-container">
+        <a href="/" class="nav-brand">
+          <i class="fas fa-shield-alt"></i> Assignment Manager Admin
+        </a>
+        <ul class="nav-links">
+          <li><span class="admin-badge"><i class="fas fa-crown"></i> Admin Panel</span></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- Admin Login Card -->
+      <div class="card" style="max-width:500px; margin:3rem auto;">
+        <div class="admin-header">
+          <div style="font-size:4rem; margin-bottom:1rem;">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <h1 style="margin:0; color:white;">
+            <i class="fas fa-crown"></i> Administrator Access
+          </h1>
+          <p style="margin:0.5rem 0 0; opacity:0.9;">
+            Secure access to teacher management system
+          </p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">
+                <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
+                <div>{{ message }}</div>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Security Notice -->
+        <div class="security-notice">
+          <i class="fas fa-lock"></i>
+          <strong>Security Notice:</strong> This is a restricted admin area. All access attempts are logged and monitored.
+        </div>
+
+        <form method="post" action="/admin/login" id="adminLoginForm">
+          <div class="form-group">
+            <label class="form-label" for="username">
+              <i class="fas fa-user-crown"></i> Admin Username
+            </label>
+            <input 
+              type="text" 
+              id="username" 
+              name="username" 
+              class="form-input" 
+              required 
+              placeholder="Enter admin username"
+              autocomplete="username"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">
+              <i class="fas fa-key"></i> Admin Password
+            </label>
+            <div style="position:relative;">
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input" 
+                required 
+                placeholder="Enter admin password"
+                autocomplete="current-password"
+                style="padding-right:3rem;"
+              >
+              <button 
+                type="button" 
+                id="togglePassword"
+                style="position:absolute; right:1rem; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1rem;"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+              <input type="checkbox" name="remember_admin" style="width:auto;">
+              <span class="text-muted">Remember admin session</span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-danger btn-lg" style="width:100%; margin-top:1rem;" id="loginBtn">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Access Admin Panel</span>
+          </button>
+        </form>
+
+        <!-- Back to Main System -->
+        <div class="mt-4 text-center">
+          <a href="/" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Main System
+          </a>
+        </div>
+      </div>
+
+      <!-- Admin Security Info -->
+      <div class="card" style="max-width:500px; margin:0 auto;" class="danger-zone">
+        <div style="text-align:center;">
+          <div style="font-size:2.5rem; color:#e74c3c; margin-bottom:1rem;">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <h3 style="margin:0 0 0.5rem; color:var(--text);">Administrator Privileges</h3>
+          <p class="text-muted" style="margin:0;">
+            Only authorized administrators can access this area
+          </p>
+          <div style="margin-top:1rem; padding:1rem; background:#f8f9fa; border-radius:5px;">
+            <small>
+              <i class="fas fa-info-circle"></i>
+              Teacher account management and system configuration
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Password toggle functionality
+      const passwordInput = document.getElementById('password');
+      const togglePassword = document.getElementById('togglePassword');
+      const toggleIcon = togglePassword.querySelector('i');
+
+      togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        if (type === 'password') {
+          toggleIcon.className = 'fas fa-eye';
+        } else {
+          toggleIcon.className = 'fas fa-eye-slash';
+        }
+      });
+
+      // Form submission with loading state
+      document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+        const loginBtn = document.getElementById('loginBtn');
+        const originalHTML = loginBtn.innerHTML;
+        
+        // Show loading state
+        loginBtn.innerHTML = '<div class="loading"></div> <span>Authenticating...</span>';
+        loginBtn.disabled = true;
+        
+        // Reset button after 3 seconds (in case of error)
+        setTimeout(() => {
+          loginBtn.innerHTML = originalHTML;
+          loginBtn.disabled = false;
+        }, 3000);
+      });
+
+      // Auto-focus first input
+      document.getElementById('username').focus();
+
+      // Enhanced form validation
+      document.querySelectorAll('.form-input').forEach(input => {
+        input.addEventListener('invalid', function() {
+          this.style.borderColor = 'var(--danger)';
+        });
+        
+        input.addEventListener('input', function() {
+          this.style.borderColor = '';
+        });
+      });
+    </script>
+  </body>
+</html>

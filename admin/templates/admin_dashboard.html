@@ -1,0 +1,385 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Admin Dashboard - Teacher Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+      .admin-badge {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      
+      .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 0;
+      }
+      
+      .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin: 0;
+      }
+      
+      .teacher-card {
+        border: 1px solid #e1e8ed;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: white;
+        transition: box-shadow 0.2s;
+      }
+      
+      .teacher-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      
+      .teacher-id {
+        font-family: monospace;
+        background: #f8f9fa;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+      
+      .status-active {
+        color: #28a745;
+      }
+      
+      .status-inactive {
+        color: #dc3545;
+      }
+      
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+      }
+      
+      .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 2rem;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+        position: relative;
+      }
+      
+      .close {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #999;
+      }
+      
+      .close:hover {
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Admin Navigation Bar -->
+    <nav class="navbar" style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);">
+      <div class="nav-container">
+        <a href="/" class="nav-brand">
+          <i class="fas fa-shield-alt"></i> Admin Dashboard
+        </a>
+        <ul class="nav-links">
+          <li><span class="admin-badge"><i class="fas fa-crown"></i> Admin</span></li>
+          <li><span style="color:white;">Welcome, {{ session.get('admin_username', 'Admin') }}</span></li>
+          <li><a href="/admin/logout" style="color:white;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- Page Header -->
+      <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 2rem;">
+        <div style="padding: 2rem; text-align: center;">
+          <h1 style="margin: 0; color: white;">
+            <i class="fas fa-users-cog"></i> Teacher Management Dashboard
+          </h1>
+          <p style="margin: 0.5rem 0 0; opacity: 0.9;">
+            Create and manage teacher accounts securely
+          </p>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      <div class="stats-card">
+        <div class="stats-number">{{ teacher_count }}</div>
+        <div class="stats-label">
+          <i class="fas fa-chalkboard-teacher"></i> Total Teachers
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'error' if category == 'error' else 'success' }}">
+              <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
+              <div>{{ message }}</div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Create Teacher Section -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <i class="fas fa-user-plus"></i> Create New Teacher
+          </h2>
+          <p class="card-subtitle">
+            Add a new teacher account to the system
+          </p>
+        </div>
+
+        <form method="post" action="/admin/create-teacher" id="createTeacherForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="teacher_id">
+                <i class="fas fa-id-card"></i> Teacher ID *
+              </label>
+              <input 
+                type="text" 
+                id="teacher_id" 
+                name="teacher_id" 
+                class="form-input" 
+                required 
+                placeholder="e.g., teacher001"
+                pattern="[a-zA-Z0-9_]+"
+                title="Only letters, numbers, and underscores allowed"
+              >
+              <small class="text-muted">Unique identifier for the teacher</small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="teacher_name">
+                <i class="fas fa-user"></i> Teacher Name *
+              </label>
+              <input 
+                type="text" 
+                id="teacher_name" 
+                name="teacher_name" 
+                class="form-input" 
+                required 
+                placeholder="Full name of the teacher"
+              >
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="password">
+                <i class="fas fa-lock"></i> Password *
+              </label>
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input" 
+                required 
+                placeholder="Minimum 6 characters"
+                minlength="6"
+              >
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="confirm_password">
+                <i class="fas fa-lock"></i> Confirm Password *
+              </label>
+              <input 
+                type="password" 
+                id="confirm_password" 
+                name="confirm_password" 
+                class="form-input" 
+                required 
+                placeholder="Repeat password"
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <button type="submit" class="btn btn-primary btn-lg" id="createTeacherBtn">
+              <i class="fas fa-user-plus"></i> Create Teacher Account
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Teachers List -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <i class="fas fa-list"></i> Existing Teachers ({{ teacher_count }})
+          </h2>
+          <p class="card-subtitle">
+            All registered teacher accounts
+          </p>
+        </div>
+
+        {% if teachers %}
+          <div style="max-height: 400px; overflow-y: auto;">
+            {% for teacher in teachers %}
+              <div class="teacher-card">
+                <div style="display: flex; justify-content: between; align-items: center;">
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                      <h3 style="margin: 0; color: var(--text);">{{ teacher.name }}</h3>
+                      <span class="teacher-id">{{ teacher.id }}</span>
+                      <span class="status-{{ 'active' if teacher.get('isActive', True) else 'inactive' }}">
+                        <i class="fas fa-{{ 'check-circle' if teacher.get('isActive', True) else 'times-circle' }}"></i>
+                        {{ 'Active' if teacher.get('isActive', True) else 'Inactive' }}
+                      </span>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 0.9rem;">
+                      <i class="fas fa-calendar"></i> Created: {{ teacher.createdAt[:10] if teacher.createdAt else 'N/A' }}
+                      <span style="margin: 0 0.5rem;">•</span>
+                      <i class="fas fa-user-shield"></i> By: {{ teacher.createdBy or 'Admin' }}
+                    </div>
+                  </div>
+                  <div>
+                    <button 
+                      class="btn btn-danger btn-sm" 
+                      onclick="deleteTeacher('{{ teacher.id }}', '{{ teacher.name }}')"
+                      title="Delete Teacher"
+                    >
+                      <i class="fas fa-trash"></i> Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <p>No teachers created yet.</p>
+            <p>Use the form above to create your first teacher account.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Security Info -->
+      <div class="card" style="background: #f8f9fa;">
+        <div style="text-align: center;">
+          <h3 style="color: var(--text);">
+            <i class="fas fa-shield-alt"></i> Security Information
+          </h3>
+          <p class="text-muted">
+            All teacher passwords are securely hashed using industry-standard encryption.
+            This admin panel is private and excluded from version control.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2><i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i> Confirm Deletion</h2>
+        <p>Are you sure you want to delete teacher <strong id="deleteTeacherName"></strong>?</p>
+        <p><small>This action cannot be undone.</small></p>
+        <div style="margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+            <i class="fas fa-trash"></i> Delete Teacher
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Password confirmation validation
+      document.getElementById('confirm_password').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = this.value;
+        
+        if (password !== confirmPassword) {
+          this.setCustomValidity('Passwords do not match');
+        } else {
+          this.setCustomValidity('');
+        }
+      });
+
+      // Form submission with loading state
+      document.getElementById('createTeacherForm').addEventListener('submit', function(e) {
+        const btn = document.getElementById('createTeacherBtn');
+        const originalHTML = btn.innerHTML;
+        
+        btn.innerHTML = '<div class="loading"></div> <span>Creating...</span>';
+        btn.disabled = true;
+        
+        setTimeout(() => {
+          btn.innerHTML = originalHTML;
+          btn.disabled = false;
+        }, 3000);
+      });
+
+      // Delete teacher functionality
+      let teacherToDelete = null;
+
+      function deleteTeacher(teacherId, teacherName) {
+        teacherToDelete = { id: teacherId, name: teacherName };
+        document.getElementById('deleteTeacherName').textContent = teacherName;
+        document.getElementById('deleteModal').style.display = 'block';
+      }
+
+      function closeModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+        teacherToDelete = null;
+      }
+
+      document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (teacherToDelete) {
+          // Create and submit delete form
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = `/admin/delete-teacher/${teacherToDelete.id}`;
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+
+      // Close modal when clicking the X or outside
+      document.querySelector('.close').addEventListener('click', closeModal);
+      window.addEventListener('click', function(event) {
+        const modal = document.getElementById('deleteModal');
+        if (event.target === modal) {
+          closeModal();
+        }
+      });
+
+      // Auto-focus first input
+      document.getElementById('teacher_id').focus();
+    </script>
+  </body>
+</html>
